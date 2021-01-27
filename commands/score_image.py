@@ -1,4 +1,3 @@
-import cv2
 from services.yolo4_image_detector import Yolo4ImageDetector
 from .command_base import CommandBase
 from .load_image import LoadImageCommand
@@ -15,4 +14,5 @@ class ScoreImageCommand(CommandBase):
             help="ScoreImage accepts path of image to be scored")
 
     def _run(self, arg, previous_output):
+        previous_output, _ = previous_output
         return (previous_output, self.scorer.infer_once(previous_output))
