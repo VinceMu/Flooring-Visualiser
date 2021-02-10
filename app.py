@@ -12,8 +12,8 @@ yolo4_inferer = Yolo4ImageDetector(
     classes=get_classes("./data/onnx/yolov4/coco.names"))
 
 semantic_segmenter = SemanticSegmenter(
-    encoderArch="resnet101dilated",
-    decoderArch="ppm_deepsup",
+    encoderArch=EncoderArch.resnet101dilated,
+    decoderArch=DecoderArch.ppm_deepsup,
     encoderWeightsPath=
     "./data/semantic_segmentation/ade20k-resnet101dilated-ppm_deepsup/encoder_epoch_25.pth",
     decoderWeightsPath=

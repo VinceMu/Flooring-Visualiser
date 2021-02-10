@@ -1,4 +1,4 @@
-import numpy as np, heapq, os, math
+import numpy as np, heapq, os, math, cv2
 from PIL import Image
 from skimage import io, util
 from model import QuiltMode
@@ -95,13 +95,19 @@ class TextureSynthesizer(object):
     def synthesizeTexture(self, base_texture, desiredShape):
         assert base_texture.shape[1] == base_texture.shape[
             0]  # for now  texture has to be a square
-        block_size = math.floor(base_texture.shape[0] / self.num_base_texture_blocks) # number of times we cut base_texture
+        block_size = math.floor(base_texture.shape[0] /
+                                self.num_base_texture_blocks
+                                )  # number of times we cut base_texture
         overlap = block_size // self.overlap_ratio
         h_block, w_block = self.calculateNumBlock(block_size, overlap,
                                                   desiredShape[0],
                                                   desiredShape[1])
-        return self.quilt(base_texture, block_size, (h_block, w_block),
-                          QuiltMode.BEST)
+        raw_quilted_texture = self.quilt(base_texture, block_size,
+                                         (h_block, w_block), QuiltMode.BEST)
+        return cv2.resize(
+            raw_quilted_texture,
+            (desiredShape[1],
+             desiredShape[0]))  # TODO: allow for crop strategy as well
 
     def calculateSynthesizedTextureSize(self, block_size, overlap, h_block,
                                         w_block):
@@ -132,7 +138,6 @@ class TextureSynthesizer(object):
         res = np.zeros((h, w, texture.shape[2]))
         print(num_blockHigh, num_blockWide)
         for i in range(num_blockHigh):
-            print(i)
             for j in range(num_blockWide):
                 y = i * (block_size - overlap)
                 x = j * (block_size - overlap)

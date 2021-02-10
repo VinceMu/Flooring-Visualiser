@@ -12,28 +12,37 @@ TODO:
 
 
 class SemanticSegmenter():
-    def __init__(self,
-                 encoderArch: EncoderArch,
-                 decoderArch: DecoderArch,
-                 encoderWeightsPath: str,
-                 decoderWeightsPath: str,
-                 classesPath:
-                 str = "./data/semantic_segmentation/object150_info.csv",
-                 colorPath: str = "./data/semantic_segmentation/color150.mat",
-                 resultPath: str = "./data/segmentation_results"):
-        encoder = ModelBuilder.build_encoder(arch=encoderArch,
-                                             fc_dim=2048,
-                                             weights=encoderWeightsPath)
-        decoder = ModelBuilder.build_decoder(arch=decoderArch,
-                                             fc_dim=2048,
-                                             num_class=150,
-                                             weights=decoderWeightsPath,
-                                             use_softmax=True)
-        encoderName = encoderWeightsPath.split("/")[
-            -2]  # encompassing folder is the name
-        self.resultPath = f'{resultPath}/{encoderName}/'
-        Path(resultPath).mkdir(parents=True, exist_ok=True)
+    def __init__(
+            self,
+            classesPath:str = "./data/semantic_segmentation/object150_info.csv",
+            colorPath: str = "./data/semantic_segmentation/color150.mat",
+            resultPath: str = "./data/segmentation_results",
+            encoderArch=EncoderArch.resnet101dilated,
+            decoderArch=DecoderArch.ppm_deepsup,
+            encoderWeightsPath="./data/semantic_segmentation/ade20k-resnet101dilated-ppm_deepsup/encoder_epoch_25.pth",
+            decoderWeightsPath="./data/semantic_segmentation/ade20k-resnet101dilated-ppm_deepsup/decoder_epoch_25.pth",
+            **kwargs):
+        if kwargs.get('encoderParams') is not None:
+            encoder_params = kwargs.get('encoderParams')
+            encoder = encoder_params.getEncoder()
+        else:
+            encoder = ModelBuilder.build_encoder(arch=encoderArch.name,
+                                                 fc_dim=2048,
+                                                 weights=encoderWeightsPath)
+            encoderName = encoderWeightsPath.split("/")[
+                -2]  # encompassing folder is the name
+            self.resultPath = f'{resultPath}/{encoderName}/'
+            Path(resultPath).mkdir(parents=True, exist_ok=True)
 
+        if kwargs.get('decoderParams') is not None:
+            decoder_params = kwargs.get('decoderParams')
+            decoder = decoder_params.getDecoder()
+        else:
+            decoder = ModelBuilder.build_decoder(arch=decoderArch.name,
+                                                 fc_dim=2048,
+                                                 num_class=150,
+                                                 weights=decoderWeightsPath,
+                                                 use_softmax=True)
         crit = torch.nn.NLLLoss(ignore_index=-1)
         self.segmentation_module = SegmentationModule(encoder, decoder, crit)
         self.segmentation_module.eval()
@@ -80,7 +89,6 @@ class SemanticSegmenter():
 
         # colorize prediction
         pred_color = colorEncode(pred, self.colors).astype(np.uint8)
-        print(pred_color)
         return pred_color
 
     def encodeImageAndSave(self,
@@ -112,6 +120,11 @@ class SemanticSegmenter():
         im_vis = np.concatenate(
             (image, pred_color), axis=1) if image is not None else pred_color
         (Image.fromarray(im_vis)).show()
+    
+    def segmentFloor(self,
+                    image: np.array):
+        raw_segmentation = self.segmentImage(image)
+        return self._encodePrediction(raw_segmentation, self.floor_index)
 
 
     def encodeFloorAndSave(self,
