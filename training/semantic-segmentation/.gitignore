@@ -1,0 +1,16 @@
+*.pyc
+
+ckpt/
+vis/
+log/
+pretrained/
+
+.ipynb_checkpoints
+
+ADE_val*.jpg
+ADE_val*.png
+
+.idea/
+
+data/ADEChallengeData2016
+data/ADEChallengeData2016Masked
